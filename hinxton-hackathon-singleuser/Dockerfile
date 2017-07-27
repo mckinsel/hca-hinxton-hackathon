@@ -250,7 +250,6 @@ CMD ["start-notebook.sh"]
 COPY start.sh /usr/local/bin/
 COPY start-notebook.sh /usr/local/bin/
 COPY start-singleuser.sh /usr/local/bin/
-COPY jupyter_notebook_config.py /etc/jupyter/
 COPY notebook /etc/sudoers.d/
 RUN chown -R $NB_USER:users /etc/jupyter/
 
