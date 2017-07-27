@@ -251,6 +251,6 @@ COPY start.sh /usr/local/bin/
 COPY start-notebook.sh /usr/local/bin/
 COPY start-singleuser.sh /usr/local/bin/
 COPY notebook /etc/sudoers.d/
-RUN chown -R $NB_USER:users /etc/jupyter/
+RUN mkdir -p /etc/jupyter && chown -R $NB_USER:users /etc/jupyter/
 
 USER $NB_USER
