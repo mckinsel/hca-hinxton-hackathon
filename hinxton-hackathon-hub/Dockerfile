@@ -16,6 +16,7 @@ RUN git clone https://github.com/cassinyio/SwarmSpawner \
  && pip3 install -r requirements.txt \
  && python3 setup.py install
 
+RUN sed -i -e 's/10)/600)/' /usr/local/lib/python3.5/dist-packages/jupyterhub/handlers/base.py
 RUN mkdir -p /srv/jupyterhub
 
 CMD ["jupyterhub", "-f", "/srv/jupyterhub/jupyter_config.py"]
