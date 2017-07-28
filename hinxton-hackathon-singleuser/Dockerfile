@@ -239,9 +239,96 @@ RUN pip install -U pip \
  && pip install tensorflow \
  && pip3 install tensorflow
 
+# end tensorflow notebook
 
+# start hackathon requests
+
+RUN pip3 install \
+  plotnine \
+  pysam
+
+RUN pip install \
+  plotnine \
+  pysam
+
+RUN apt-get update \
+ && apt-get install -y \
+    bwa \
+    graphviz-dev \
+    libhts-dev \
+    parallel \
+    samtools
+
+RUN R -e "source('https://bioconductor.org/biocLite.R'); biocLite(c('Rsamtools', 'GenomicAlignments', 'SC3', 'scater', 'GenomicFeatures'))" \
+ && R -e "source('https://bioconductor.org/biocLite.R'); biocLite(c('annotate', 'Biobase', 'edgeR', 'limma', 'BiocParallel', 'Rgraphviz'))" \
+ && R -e "source('https://bioconductor.org/biocLite.R'); biocLite(c('pcaMethods', 'clusterProfiler', 'genefilter', 'Biostrings', 'zlibbioc'))"
+
+RUN R -e "library('devtools'); install_github(\"satijalab/seurat\")" \
+ && R -e "install.packages('RColorBrewer')" \
+ && R -e "install.packages('Rtsne')" \
+ && R -e "install.packages('matrixStats')" \
+ && R -e "install.packages('permute')" \
+ && R -e "install.packages('gplots')" \
+ && R -e "install.packages('igraph')" \
+ && R -e "install.packages('pROC')" \
+ && R -e "install.packages('irlba')"
+
+RUN wget https://github.com/pachterlab/kallisto/releases/download/v0.43.1/kallisto_linux-v0.43.1.tar.gz \
+ && tar xf kallisto_linux-v0.43.1.tar.gz \
+ && mv kallisto_linux-v0.43.1/kallisto /usr/bin/kalliso \
+ && rm -r kallisto_linux-v0.43.1 kallisto_linux-v0.43.1.tar.gz
+
+# end hackathon requests
+ENV JULIA_PKGDIR=/opt/julia
+
+# sure, julia
+RUN echo "deb http://ppa.launchpad.net/staticfloat/juliareleases/ubuntu trusty main" > /etc/apt/sources.list.d/julia.list \
+ && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3D3D3ACC \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends \
+    julia \
+    libnettle6 \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/* \
+ && mkdir $JULIA_PKGDIR \
+ && chown -R $NB_USER:users $JULIA_PKGDIR
+
+USER $NB_USER
+
+RUN julia -e 'Pkg.init()' \
+ && julia -e 'Pkg.update()' \
+ && julia -e 'Pkg.add("HDF5")' \
+ && julia -e 'Pkg.add("Gadfly")'  \
+ && julia -e 'Pkg.add("RDatasets")' \
+ && julia -e 'Pkg.add("IJulia")' \
+ && julia -e 'using HDF5' \
+ && julia -e 'using Gadfly' \
+ && julia -e 'using RDatasets' \
+ && julia -e 'using IJulia'
+
+# end julia
+
+# docker
+USER root
+RUN apt-get update \
+ && apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    software-properties-common \
+ && curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+  | apt-key add - \
+ && add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu zesty stable" \
+ && apt-get update \
+ && apt-get install -y docker-ce
+
+# end docker
+
+# Now stuff for the server itself
 EXPOSE 8888
 
+
+USER root
 # Configure container startup
 ENTRYPOINT ["tini", "--"]
 CMD ["start-notebook.sh"]
@@ -250,7 +337,20 @@ CMD ["start-notebook.sh"]
 COPY start.sh /usr/local/bin/
 COPY start-notebook.sh /usr/local/bin/
 COPY start-singleuser.sh /usr/local/bin/
+RUN chmod a+x /usr/local/bin/start-notebook.sh /usr/local/bin/start-singleuser.sh /usr/local/bin/start.sh
+
 COPY notebook /etc/sudoers.d/
 RUN mkdir -p /etc/jupyter && chown -R $NB_USER:users /etc/jupyter/
+RUN mkdir /home/$NB_USER/work
+
+RUN mkdir -p /home/$NB_USER/shared_scratch \
+ && touch /home/$NB_USER/shared_scratch/.keep \
+ && chown -R $NB_USER:users /home/$NB_USER/shared_scratch \
+ && mkdir -p /home/$NB_USER/scratch \
+ && touch /home/$NB_USER/scratch/.keep \
+ && chown -R $NB_USER:users /home/$NB_USER/scratch
+
+VOLUME /home/$NB_USER/shared_scratch
+VOLUME /home/$NB_USER/scratch
 
 USER $NB_USER
