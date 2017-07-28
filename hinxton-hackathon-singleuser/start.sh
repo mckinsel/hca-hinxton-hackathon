@@ -4,21 +4,6 @@
 
 set -e
 
-if [[ ! -z "${JUPYTERHUB_API_TOKEN}" ]]; then
-  # launched by JupyterHub, use single-user entrypoint
-  exec /usr/local/bin/start-singleuser.sh $*
-else
-  . /usr/local/bin/start.sh jupyter notebook $*
-fi
-ubuntu@ip-172-31-6-119:~/hinxton_hackathon_singleuser$ ls
-Dockerfile  jupyter_notebook_config.py  notebook  start-notebook.sh  start.sh  start-singleuser.sh
-ubuntu@ip-172-31-6-119:~/hinxton_hackathon_singleuser$ less start.sh
-#!/bin/bash
-# Copyright (c) Jupyter Development Team.
-# Distributed under the terms of the Modified BSD License.
-
-set -e
-
 # Handle special flags if we're root
 if [ $(id -u) == 0 ] ; then
     # Change UID of NB_USER to NB_UID if it does not match
