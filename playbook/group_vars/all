@@ -61,9 +61,9 @@ notebook_dir: /home/jovyan
 secret_password_key: "passphrase"
 password_length: 6
 
-server_cpu_reservation = 18000000000
-server_cpu_limit = 20000000000
-server_mem_limit = 60000000000
+server_cpu_reservation: 18000000000
+server_cpu_limit: 20000000000
+server_mem_limit: 60000000000
 
 #############################################################
 # vqriables for the hub
