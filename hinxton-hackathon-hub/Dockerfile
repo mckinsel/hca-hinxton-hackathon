@@ -9,7 +9,7 @@ RUN apt-get update \
 
 RUN apt-get install -y npm nodejs-legacy \
  && npm install -g configurable-http-proxy \
- && pip3 install jupyterhub notebook
+ && pip3 install jupyterhub notebook jupyterhub-hashauthenticator
 
 RUN git clone https://github.com/cassinyio/SwarmSpawner \
  && cd SwarmSpawner \
