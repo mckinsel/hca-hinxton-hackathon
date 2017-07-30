@@ -244,12 +244,16 @@ RUN pip install -U pip \
 # start hackathon requests
 
 RUN pip3 install \
+  fastcluster \
   plotnine \
-  pysam
+  pysam \
+  umi_tools
 
 RUN pip install \
+  fastcluster \
   plotnine \
-  pysam
+  pysam \
+  umi_tools
 
 RUN apt-get update \
  && apt-get install -y \
@@ -320,7 +324,8 @@ RUN apt-get update \
   | apt-key add - \
  && add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu zesty stable" \
  && apt-get update \
- && apt-get install -y docker-ce
+ && apt-get install -y docker-ce \
+ && usermod -aG docker $NB_USER
 
 # end docker
 
