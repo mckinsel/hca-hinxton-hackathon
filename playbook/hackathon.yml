@@ -1,0 +1,12 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+
+  roles:
+    - docker_swarm_cloudformation
+
+- hosts: manager
+  gather_facts: False
+  roles:
+    - manager

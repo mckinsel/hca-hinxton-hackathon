@@ -1,0 +1,68 @@
+---
+
+- name: Install python on manager
+  become: true
+  raw: apk update && apk add python2 python3 py-pip && python3 -m ensurepip && pip3 install --upgrade pip setuptools
+
+- name: Install docker py
+  become: true
+  pip:
+    executable: pip2
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - docker
+
+# This speeds up initial launch of services
+- name: Pull the singleuser instance on all nodes
+  command: swarm-exec docker pull "{{ singleuser_image }}"
+
+- name: Check if the overlay network exists
+  command: docker network inspect "{{ network_name }}"
+  register: overlay_network_exists
+  failed_when: false
+
+- name: Create docker overlay network
+  command: docker network create -d overlay --subnet 192.168.0.0/20 --attachable "{{ network_name }}"
+  when: overlay_network_exists|failed
+
+- name: Check if read-only volume exists
+  command: docker volume inspect "{{ read_only_shared_volume }}"
+  register: read_only_volume_exists
+  failed_when: false
+
+- name: Create read-only volume
+  command: docker volume create --driver "cloudstor:aws" --opt backing=shared "{{ read_only_shared_volume }}"
+  when: read_only_volume_exists|failed
+
+- name: Check if writable volume exists
+  command: docker volume inspect "{{ writable_shared_volume }}"
+  register: writable_volume_exists
+  failed_when: false
+
+- name: Create writable volume
+  command: docker volume create --driver "cloudstor:aws" --opt backing=shared "{{ writable_shared_volume }}"
+  when: writable_volume_exists|failed
+
+- name: Copy the user and admin list
+  template:
+    src: userlist.j2
+    dest: /home/docker/userlist
+
+- name: Copy the jupyter config
+  template:
+    src: jupyter_config.py
+    dest: /home/docker/jupyter_config.py
+
+- name: Pull the hub image
+  command: docker pull "{{ hub_image }}"
+
+- name: Launch jupyterhub service
+  command: docker service create --network "{{ network_name }}" \
+          --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock \
+          --mount type=bind,src=/home/docker/jupyter_config.py,dst=/srv/jupyterhub/jupyter_config.py \
+          --mount type=bind,src=/home/docker/userlist,dst=/srv/jupyterhub_users/userlist \
+          {% for exposed_port in exposed_ports %} --publish "{{ exposed_port }}:8000" {% endfor %} \
+          {% if certificate_arn is defined %} --label com.docker.aws.lb.arn="{{ certificate_arn }}" {% endif %} \
+          --name jupyterhub --constraint "node.role==manager" \
+          "{{hub_image}}"

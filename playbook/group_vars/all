@@ -1,0 +1,96 @@
+---
+# Region in which jupyterhub will be deployed. Tested in us-east-1 and eu-west-1, but any full-feature
+# region should work.
+aws_region: eu-west-1
+
+# Name of the docker image that will run the hub service
+hub_image: marcusczi/hinxton-hackathon-hub
+
+
+# AWS key name to use when setting up the swarm. Be sure to adjust the private_key_file in ansible.cfg too.
+key_name: aws_key_name
+
+#############################################################
+# vqriables for setting up the swarm. mostly self-explanatory
+swarm_stack_name: "jamboree"
+num_worker_nodes: "3"
+num_manager_nodes: "1"
+worker_instance_type: t2.medium
+manager_instance_type: t2.medium
+worker_disk_type: gp2
+manager_disk_type: gp2
+worker_disk_size: "20"
+manager_disk_size: "20"
+
+# A matter of preference, but I like logging in and running `docker service logs`
+enable_cloudwatch_logs: "no"
+
+# This is required to set up the shared volumes that the users' servers will mount.
+enable_cloudstor_efs: "yes"
+
+# If your AWS user doesn't have the required permissions to set up the swarm, you need to at
+# least provide a role your use can assume. If you don't need this, you can delete this line.
+#role_arn: "arn:aws:iam::787588439240:role/CZICloudFormationRole"
+
+# Don't really know what happens if you set this to "yes"...
+enable_system_prune: "no"
+
+# Location of the docker for AWS cloudformation template. This is published by Docker
+cloudformation_template_url: "https://editions-us-east-1.s3.amazonaws.com/aws/stable/Docker.tmpl"
+
+
+#############################################################
+# vqriables for the servers
+
+# Name of the docker image that will run each user's jupyter server
+singleuser_image: marcusczi/hinxton-hackathon-singleuser
+
+# Mount points for the two shared volumes
+read_only_shared_mount_point: /home/jovyan/jamboree
+writable_shared_mount_point: /home/jovyan/shared_scratch
+
+# Mount point for the private EBS volume
+local_mount_point: /home/jovyan/scratch
+# Size in GB of the private volume
+local_disk_size: 250
+
+# Directory servers will open into
+notebook_dir: /home/jovyan
+
+# Passphrase used to generate user passwords
+secret_password_key: "passphrase"
+password_length: 6
+
+server_cpu_reservation = 18000000000
+server_cpu_limit = 20000000000
+server_mem_limit = 60000000000
+
+#############################################################
+# vqriables for the hub
+
+# Name of the port that the hub will publish. In production this should probably be 443
+exposed_ports:
+- 443
+
+#certificate_arn: "arn:aws:acm:........"
+
+# Name of the docker network all the jupyter services will be attached to
+network_name: jupyterhub_network
+
+hub_service_name: jupyterhub
+
+# Names of the two shared volumes mounted to each jupyter server
+read_only_shared_volume: jamboree-resources
+writable_shared_volume: jamboree-shared
+
+# Hub admin user names
+jupyterhub_admins:
+  - admin1
+  - admin2
+
+# Hub user names
+jupyterhub_users:
+  - user1
+  - user2
+  - user3
+  - user4
